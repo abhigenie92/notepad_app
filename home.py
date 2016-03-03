@@ -8,7 +8,7 @@ def home():
 	data_rec = {'username' : request.json['username'], 'password' : request.json['password']}
 	# Check if password is correct
 	#data_rec= "hello"
-	return jsonify({'data_received' : "data_rec"})
+	return jsonify({'account_exists' : ,"password_exists"})
 
 @app.route('/create',methods=['POST'])
 def create():
