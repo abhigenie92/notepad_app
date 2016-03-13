@@ -5,9 +5,10 @@ from models import UsersLoginInfo,Base
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy import create_engine
+import socket
 
 engine = create_engine('sqlite:///userslogininfo.db')
-
+available_rooms={}
 Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
@@ -46,6 +47,9 @@ def create():
 		session.commit() 
 		msg="Your account has been created. Please login with it."
 	return jsonify({'account_exists' : account_exists ,"msg": msg})
+
+
+
 
 if __name__ == "__main__":
 	app.run(debug="True")
