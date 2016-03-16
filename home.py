@@ -7,7 +7,7 @@ from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy import create_engine
 import socket
 
-engine = create_engine('sqlite:///userslogininfo.db')
+engine = create_engine('sqlite:///var/www/FlaskApps/notepad_app/database/userslogininfo.db',connect_args={'check_same_thread':False})
 available_rooms={}
 Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)

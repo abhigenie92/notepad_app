@@ -23,7 +23,7 @@ class UsersLoginInfo(Base):
       'password': self.password,
       }
 
-engine = create_engine('sqlite:///userslogininfo.db')
+engine = create_engine('sqlite:///var/www/FlaskApps/notepad_app/database/userslogininfo.db')
  
 
 Base.metadata.create_all(engine)
