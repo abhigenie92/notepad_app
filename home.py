@@ -7,8 +7,8 @@ from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy import create_engine
 import socket
 
-#engine = create_engine('sqlite:///var/www/FlaskApps/notepad_app/database/userslogininfo.db',connect_args={'check_same_thread':False})
-engine = create_engine('sqlite:///./database/userslogininfo.db',connect_args={'check_same_thread':False})
+engine = create_engine('sqlite:///var/www/FlaskApps/notepad_app/database/userslogininfo.db',connect_args={'check_same_thread':False})
+#engine = create_engine('sqlite:///./database/userslogininfo.db',connect_args={'check_same_thread':False})
 available_rooms={}
 Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
@@ -60,7 +60,7 @@ def create():
 def start_server():
 	'''used to create a entry for the client ip_address & audio & stroke port. Thus, now others users can directly connect to that
 	client.'''
-	data_rec = {'username':request.json['username'], ip_address : request.json['ip_address'], 'audio_port' : request.json['audio_port'],
+	data_rec = {'username':request.json['username'],'ip_address':request.json['ip_address'],'audio_port':request.json['audio_port'],
 	'stroke_port' :request.json['stroke_port']}
 
 	users = [i.serialize['username'] for i in session.query(ServersAvailableInfo).all()]
@@ -72,11 +72,10 @@ def start_server():
 		remove_server_from_db(data_rec['username']) # delete existing room		
 	# add the entry to the rooms database
 	id=len(users)
-	user = ServersAvailableInfo(username = unicode(data_rec['username']), 
-		password = unicode(data_rec['password']), id = id)
-	session.add(user)
+	server_room = ServersAvailableInfo(username = unicode(data_rec['username']), ip_address=unicode(data_rec['ip_address'])
+              ,audio_port=request.json['audio_port'],stroke_port=request.json['stroke_port'], id = id)
+	session.add(server_room)
 	session.commit()
-	print 'hello'
 	return jsonify({'room_exits' : room_exits ,"msg": msg}) 
 
 #___________________________________________________________________________________________________________
