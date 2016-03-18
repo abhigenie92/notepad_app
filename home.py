@@ -82,6 +82,25 @@ def start_server():
 @app.route('/connect_server',methods=['GET'])
 def connect_server():
 	'''used to retrive the client ip_address & audio & stroke port for the queried username.'''
+	data_rec = {'server_username' : request.json['server_username']}	
+	# get the entry to the room database for the user
+	users = [i.serialize['username'] for i in session.query(ServersAvailableInfo).all()]	
+	ip_address='' 
+	audio_port=''
+	stroke_port=''
+	if data_rec['server_username'] in users: #check account exists
+		msg="Server available, establishing connection now."
+		serv_avail=True
+		room_obj=session.query(ServersAvailableInfo).filter_by(username=server_username).one()
+		print room_obj
+	
+	else:
+		msg="Server not available for the username you entered."
+		serv_avail=False
+
+@app.route('/connect_server',methods=['GET'])
+def connect_server():
+	'''used to retrive the client ip_address & audio & stroke port for the queried username.'''
 	data_rec = {'username_server' : request.json['username_server']}
 	# get the entry to the room database for the user
 	users = [i.serialize['username'] for i in session.query(ServersAvailableInfo).all()]
