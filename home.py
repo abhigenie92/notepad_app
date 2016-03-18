@@ -91,12 +91,13 @@ def connect_server():
 	if data_rec['server_username'] in users: #check account exists
 		msg="Server available, establishing connection now."
 		serv_avail=True
-		room_obj=session.query(ServersAvailableInfo).filter_by(username=server_username).one()
+		room_obj=session.query(ServersAvailableInfo).filter_by(username=request.json['server_username']).one()
 		print room_obj
 	
 	else:
 		msg="Server not available for the username you entered."
 		serv_avail=False
+	return jsonify({'serv_avail':serv_avail,'msg':msg,'ip_address':ip_address,'audio_port':audio_port,'stroke_port':stroke_port})
 
 #_______________________________________________________________________________________________
 @app.route('/delete_server',methods=['POST'])
