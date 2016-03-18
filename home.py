@@ -5,7 +5,7 @@ from models import UsersLoginInfo,ServersAvailableInfo,Base
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy import create_engine
-import socket
+import socket,pdb
 
 engine = create_engine('sqlite:///var/www/FlaskApps/notepad_app/database/userslogininfo.db',connect_args={'check_same_thread':False})
 #engine = create_engine('sqlite:///./database/userslogininfo.db',connect_args={'check_same_thread':False})
@@ -92,8 +92,9 @@ def connect_server():
 		msg="Server available, establishing connection now."
 		serv_avail=True
 		room_obj=session.query(ServersAvailableInfo).filter_by(username=request.json['server_username']).one()
-		print room_obj
-	
+		audio_port=room_obj.audio_port
+		stroke_port=room_obj.stroke_port
+		ip_address=room_obj.ip_address
 	else:
 		msg="Server not available for the username you entered."
 		serv_avail=False
