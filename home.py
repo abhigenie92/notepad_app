@@ -98,15 +98,6 @@ def connect_server():
 		msg="Server not available for the username you entered."
 		serv_avail=False
 
-@app.route('/connect_server',methods=['GET'])
-def connect_server():
-	'''used to retrive the client ip_address & audio & stroke port for the queried username.'''
-	data_rec = {'username_server' : request.json['username_server']}
-	# get the entry to the room database for the user
-	users = [i.serialize['username'] for i in session.query(ServersAvailableInfo).all()]
-	if data_rec['username'] in users: #check account exists
-		pass
-
 #_______________________________________________________________________________________________
 @app.route('/delete_server',methods=['POST'])
 def delete_server():
@@ -125,8 +116,5 @@ def remove_server_from_db(username):
 		session.delete(room_obj)
 		session.commit()
 
-
-
 if __name__ == "__main__":
-	logging.basicConfig(filename='error.log',level=logging.DEBUG)
 	app.run(debug="True")
