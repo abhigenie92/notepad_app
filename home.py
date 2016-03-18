@@ -1,21 +1,25 @@
 #https://github.com/udacity/APIs/tree/master/Lesson_3/06_Adding%20Features%20to%20your%20Mashup/Solution%20Code
 #https://www.youtube.com/playlist?list=PLXmMXHVSvS-CoYS177-UvMAQYRfL3fBtX
 from flask import Flask,jsonify, request
-from models import UsersLoginInfo,Base
+from models import UsersLoginInfo,ServersAvailableInfo,Base
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy import create_engine
 import socket
 
-engine = create_engine('sqlite:///var/www/FlaskApps/notepad_app/database/userslogininfo.db',connect_args={'check_same_thread':False})
+#engine = create_engine('sqlite:///var/www/FlaskApps/notepad_app/database/userslogininfo.db',connect_args={'check_same_thread':False})
+engine = create_engine('sqlite:///./database/userslogininfo.db',connect_args={'check_same_thread':False})
 available_rooms={}
 Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
 app=Flask(__name__)
 
+#_____________________________________________________________________________________________________
 @app.route('/login',methods=['POST'])
-def home():
+def login():
+	'''used to allow users to login with correct corresponding password to a username'''
+
 	data_rec = {'username' : request.json['username'], 'password' : request.json['password']}
 	users = [i.serialize['username'] for i in session.query(UsersLoginInfo).all()]
 	passwords = [i.serialize['password'] for i in session.query(UsersLoginInfo).all()]
@@ -32,8 +36,11 @@ def home():
 		msg="There is no user with that username, please create an account."
 	return jsonify({'login' : login ,"msg": msg})
 
+#___________________________________________________________________________________________________
 @app.route('/create',methods=['POST'])
 def create():
+	'''used to create users. Check if a user already exists before creating.'''
+
 	data_rec = {'username' : request.json['username'], 'password' : request.json['password']}
 	users = [i.serialize['username'] for i in session.query(UsersLoginInfo).all()]
 	if data_rec['username'] in users: #check account exists
@@ -42,14 +49,66 @@ def create():
 	else:
 		account_exists=False
 		id=len(users)
-		user = UsersLoginInfo(username = unicode(data_rec['username']), password = unicode(data_rec['password']), id = id)
+		user = UsersLoginInfo(username = unicode(data_rec['username']), 
+			password = unicode(data_rec['password']), id = id)
 		session.add(user)
 		session.commit() 
 		msg="Your account has been created. Please login with it."
 	return jsonify({'account_exists' : account_exists ,"msg": msg})
+#____________________________________________________________________________________________________________
+@app.route('/start_server',methods=['POST'])
+def start_server():
+	'''used to create a entry for the client ip_address & audio & stroke port. Thus, now others users can directly connect to that
+	client.'''
+	data_rec = {'username':request.json['username'], ip_address : request.json['ip_address'], 'audio_port' : request.json['audio_port'],
+	'stroke_port' :request.json['stroke_port']}
 
+	users = [i.serialize['username'] for i in session.query(ServersAvailableInfo).all()]
+	room_exits=False 
+	msg='This server created.'
+	if data_rec['username'] in users: #check account exists
+		msg='This server already existed. It has been deleted and a server has been created.'
+		room_exits=True
+		remove_server_from_db(data_rec['username']) # delete existing room		
+	# add the entry to the rooms database
+	id=len(users)
+	user = ServersAvailableInfo(username = unicode(data_rec['username']), 
+		password = unicode(data_rec['password']), id = id)
+	session.add(user)
+	session.commit()
+	print 'hello'
+	return jsonify({'room_exits' : room_exits ,"msg": msg}) 
+
+#___________________________________________________________________________________________________________
+@app.route('/connect_server',methods=['GET'])
+def connect_server():
+	'''used to retrive the client ip_address & audio & stroke port for the queried username.'''
+	data_rec = {'username_server' : request.json['username_server']}
+	# get the entry to the room database for the user
+	users = [i.serialize['username'] for i in session.query(ServersAvailableInfo).all()]
+	if data_rec['username'] in users: #check account exists
+		pass
+
+#_______________________________________________________________________________________________
+@app.route('/delete_server',methods=['POST'])
+def delete_server():
+	'''deletes the room from base, is called on app exit'''
+	data_rec = {'username':request.json['username']}
+	users = [i.serialize['username'] for i in session.query(ServersAvailableInfo).all()]
+	if data_rec['username'] in users: #check account exists
+		remove_server_from_db(data_rec['username'])
+	return None 
+
+def remove_server_from_db(username):
+	'''removes a room from the database ServersAvailableInfo searching by argument username received
+	in call'''
+	room_obj=session.query(ServersAvailableInfo).filter_by(name=username).one()
+	if room_obj:
+		session.delete(room_obj)
+		session.commit()
 
 
 
 if __name__ == "__main__":
+	logging.basicConfig(filename='error.log',level=logging.DEBUG)
 	app.run(debug="True")
