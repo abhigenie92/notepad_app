@@ -72,6 +72,7 @@ def start_server():
 		remove_server_from_db(data_rec['username']) # delete existing room		
 	# add the entry to the rooms database
 	id=len(users)
+	print "hello"
 	server_room = ServersAvailableInfo(username = unicode(data_rec['username']), ip_address=unicode(data_rec['ip_address'])
               ,audio_port=request.json['audio_port'],stroke_port=request.json['stroke_port'], id = id)
 	session.add(server_room)
@@ -89,7 +90,7 @@ def connect_server():
 	audio_port=''
 	stroke_port=''
 	if data_rec['server_username'] in users: #check account exists
-		msg="Server available, establishing connection now."
+		msg="The specified user has registered a server, establishing connection now..."
 		serv_avail=True
 		room_obj=session.query(ServersAvailableInfo).filter_by(username=request.json['server_username']).one()
 		audio_port=room_obj.audio_port
@@ -113,7 +114,7 @@ def delete_server():
 def remove_server_from_db(username):
 	'''removes a room from the database ServersAvailableInfo searching by argument username received
 	in call'''
-	room_obj=session.query(ServersAvailableInfo).filter_by(name=username).one()
+	room_obj=session.query(ServersAvailableInfo).filter_by(username=username).one()
 	if room_obj:
 		session.delete(room_obj)
 		session.commit()

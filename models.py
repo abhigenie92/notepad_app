@@ -35,8 +35,8 @@ class ServersAvailableInfo(Base):
       'stroke_port': self.stroke_port,
       }
 
-#engine = create_engine('sqlite:///var/www/FlaskApps/notepad_app/database/userslogininfo.db')
-engine = create_engine('sqlite:///./database/userslogininfo.db')
+engine = create_engine('sqlite:///var/www/FlaskApps/notepad_app/database/userslogininfo.db')
+#engine = create_engine('sqlite:///./database/userslogininfo.db')
   
 
 Base.metadata.create_all(engine)
