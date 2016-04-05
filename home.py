@@ -6,7 +6,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy import create_engine
 import socket,pdb,json
-from klein import run, route, Klein, resourse
+from klein import run, route, Klein, resource
 from os import pathsep
 from stroke_protocol import StrokeEchoFactory
 from audio_protocol import AudioEchoUDP
