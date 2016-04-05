@@ -1,1 +1,1 @@
-sudo echo " " > /var/log/apache2/error.log
+rm -rf twistd.log twistd.pid

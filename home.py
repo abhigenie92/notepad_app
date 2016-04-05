@@ -105,7 +105,7 @@ def connect_server(request):
 	else:
 		msg="Server not available for the username you entered."
 		serv_avail=False
-	return json.dumps({'serv_avail':serv_avail,'msg':msg,'ip_address':ip_address,'audio_port':audio_port,'stroke_port':stroke_port})
+	return json.dumps({'serv_avail':serv_avail,'msg':msg,'audio_port':audio_port,'stroke_port':stroke_port})
 
 #_______________________________________________________________________________________________
 @app.route('/delete_server',methods=['POST'])

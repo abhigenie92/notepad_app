@@ -1,2 +1,1 @@
-
-sudo /etc/init.d/apache2 restart 
+twistd web --class=home.resource -p 8080
