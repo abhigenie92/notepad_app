@@ -1,14 +1,15 @@
 #https://github.com/udacity/APIs/tree/master/Lesson_3/06_Adding%20Features%20to%20your%20Mashup/Solution%20Code
 #https://www.youtube.com/playlist?list=PLXmMXHVSvS-CoYS177-UvMAQYRfL3fBtX
-from flask import Flask,jsonify, request
+#from flask import Flask,jsonify, request
 from models import UsersLoginInfo,ServersAvailableInfo,Base
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy import create_engine
 import socket,pdb,json
-from klein import run, route, Klein
+from klein import run, route, Klein, resourse
 from os import pathsep
-
+from stroke_protocol import StrokeEchoFactory
+from audio_protocol import AudioEchoUDP
 engine = create_engine('sqlite:///var/www/FlaskApps/notepad_app/database/userslogininfo.db',connect_args={'check_same_thread':False})
 #engine = create_engine('sqlite:///.'+pathsep+'database'+pathsep+'userslogininfo.db',connect_args={'check_same_thread':False})
 available_rooms={}
@@ -69,13 +70,20 @@ def start_server(request):
 		msg='This server already existed. It has been deleted and a server has been created.'
 		room_exits=True
 		remove_server_from_db(data_rec['username']) # delete existing room		
+	
+	# code to start the serber
+	port = app.listenTCP(0, StrokeEchoFactory())
+	stroke_port=port.getHost().port
+	port = app.listenUDP(0, AudioEchoUDP())
+	audio_port=port.getHost().port
+
 	# add the entry to the rooms database
 	id=len(users)
-	print "hello"
 	server_room = ServersAvailableInfo(username = unicode(data_rec['username']), ip_address=unicode(data_rec['ip_address'])
-              ,audio_port=request.json['audio_port'],stroke_port=request.json['stroke_port'], id = id)
+              ,audio_port=audio_port,stroke_port=stroke_port, id = id)
 	session.add(server_room)
 	session.commit()
+	
 	return json.dumps({'room_exits' : room_exits ,"msg": msg}) 
 
 #___________________________________________________________________________________________________________
@@ -120,3 +128,6 @@ def remove_server_from_db(username):
 
 if __name__ == "__main__":
 	app.run("0.0.0.0", 80)
+else:
+	# expose a 'resource' name for use with twistd web
+	resource = app.resource
