@@ -6,6 +6,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy import create_engine
 import socket,pdb
+from klein import run, route
+
 
 engine = create_engine('sqlite:///var/www/FlaskApps/notepad_app/database/userslogininfo.db',connect_args={'check_same_thread':False})
 #engine = create_engine('sqlite:///./database/userslogininfo.db',connect_args={'check_same_thread':False})
@@ -13,7 +15,7 @@ available_rooms={}
 Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
-app=Flask(__name__)
+app = Klein()
 
 #_____________________________________________________________________________________________________
 @app.route('/login',methods=['POST'])
