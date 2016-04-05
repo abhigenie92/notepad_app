@@ -10,8 +10,7 @@ from klein import run, route, Klein, resourse
 from os import pathsep
 from stroke_protocol import StrokeEchoFactory
 from audio_protocol import AudioEchoUDP
-engine = create_engine('sqlite:///var/www/FlaskApps/notepad_app/database/userslogininfo.db',connect_args={'check_same_thread':False})
-#engine = create_engine('sqlite:///.'+pathsep+'database'+pathsep+'userslogininfo.db',connect_args={'check_same_thread':False})
+engine = create_engine('sqlite:///.'+pathsep+'database'+pathsep+'userslogininfo.db',connect_args={'check_same_thread':False})
 available_rooms={}
 Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
@@ -83,7 +82,7 @@ def start_server(request):
               ,audio_port=audio_port,stroke_port=stroke_port, id = id)
 	session.add(server_room)
 	session.commit()
-	
+
 	return json.dumps({'room_exits' : room_exits ,"msg": msg}) 
 
 #___________________________________________________________________________________________________________
