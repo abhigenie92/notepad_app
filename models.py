@@ -3,6 +3,7 @@ from sqlalchemy import Column,Integer,String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy import create_engine
+from os import pathsep
 
 Base = declarative_base()
 class UsersLoginInfo(Base):
@@ -36,7 +37,7 @@ class ServersAvailableInfo(Base):
       }
 
 engine = create_engine('sqlite:///var/www/FlaskApps/notepad_app/database/userslogininfo.db')
-#engine = create_engine('sqlite:///./database/userslogininfo.db')
+#engine = create_engine('sqlite:///.'+pathsep+'database'+pathsep+'userslogininfo.db')
   
 
 Base.metadata.create_all(engine)

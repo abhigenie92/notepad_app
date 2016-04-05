@@ -5,24 +5,23 @@ from models import UsersLoginInfo,ServersAvailableInfo,Base
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy import create_engine
-import socket,pdb
-from klein import run, route
-
+import socket,pdb,json
+from klein import run, route, Klein
+from os import pathsep
 
 engine = create_engine('sqlite:///var/www/FlaskApps/notepad_app/database/userslogininfo.db',connect_args={'check_same_thread':False})
-#engine = create_engine('sqlite:///./database/userslogininfo.db',connect_args={'check_same_thread':False})
+#engine = create_engine('sqlite:///.'+pathsep+'database'+pathsep+'userslogininfo.db',connect_args={'check_same_thread':False})
 available_rooms={}
 Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
+#app=Flask(__name__)
 app = Klein()
-
 #_____________________________________________________________________________________________________
 @app.route('/login',methods=['POST'])
-def login():
+def login(request):
 	'''used to allow users to login with correct corresponding password to a username'''
-
-	data_rec = {'username' : request.json['username'], 'password' : request.json['password']}
+	data_rec = json.loads(request.content.read())
 	users = [i.serialize['username'] for i in session.query(UsersLoginInfo).all()]
 	passwords = [i.serialize['password'] for i in session.query(UsersLoginInfo).all()]
 	login=False
@@ -36,14 +35,13 @@ def login():
 			msg="Wrong password entered."
 	except ValueError:
 		msg="There is no user with that username, please create an account."
-	return jsonify({'login' : login ,"msg": msg})
+	return json.dumps({'login' : login ,"msg": msg})
 
 #___________________________________________________________________________________________________
 @app.route('/create',methods=['POST'])
-def create():
+def create(request):
 	'''used to create users. Check if a user already exists before creating.'''
-
-	data_rec = {'username' : request.json['username'], 'password' : request.json['password']}
+	data_rec = json.loads(request.content.read())
 	users = [i.serialize['username'] for i in session.query(UsersLoginInfo).all()]
 	if data_rec['username'] in users: #check account exists
 		account_exists=True	
@@ -56,14 +54,13 @@ def create():
 		session.add(user)
 		session.commit() 
 		msg="Your account has been created. Please login with it."
-	return jsonify({'account_exists' : account_exists ,"msg": msg})
+	return json.dumps({'account_exists' : account_exists ,"msg": msg})
 #____________________________________________________________________________________________________________
 @app.route('/start_server',methods=['POST'])
-def start_server():
+def start_server(request):
 	'''used to create a entry for the client ip_address & audio & stroke port. Thus, now others users can directly connect to that
 	client.'''
-	data_rec = {'username':request.json['username'],'ip_address':request.json['ip_address'],'audio_port':request.json['audio_port'],
-	'stroke_port' :request.json['stroke_port']}
+	data_rec = json.loads(request.content.read())
 
 	users = [i.serialize['username'] for i in session.query(ServersAvailableInfo).all()]
 	room_exits=False 
@@ -79,13 +76,13 @@ def start_server():
               ,audio_port=request.json['audio_port'],stroke_port=request.json['stroke_port'], id = id)
 	session.add(server_room)
 	session.commit()
-	return jsonify({'room_exits' : room_exits ,"msg": msg}) 
+	return json.dumps({'room_exits' : room_exits ,"msg": msg}) 
 
 #___________________________________________________________________________________________________________
 @app.route('/connect_server',methods=['GET'])
-def connect_server():
+def connect_server(request):
 	'''used to retrive the client ip_address & audio & stroke port for the queried username.'''
-	data_rec = {'server_username' : request.json['server_username']}	
+	data_rec = json.loads(request.content.read())
 	# get the entry to the room database for the user
 	users = [i.serialize['username'] for i in session.query(ServersAvailableInfo).all()]	
 	ip_address='' 
@@ -101,13 +98,13 @@ def connect_server():
 	else:
 		msg="Server not available for the username you entered."
 		serv_avail=False
-	return jsonify({'serv_avail':serv_avail,'msg':msg,'ip_address':ip_address,'audio_port':audio_port,'stroke_port':stroke_port})
+	return json.dumps({'serv_avail':serv_avail,'msg':msg,'ip_address':ip_address,'audio_port':audio_port,'stroke_port':stroke_port})
 
 #_______________________________________________________________________________________________
 @app.route('/delete_server',methods=['POST'])
-def delete_server():
+def delete_server(request):
 	'''deletes the room from base, is called on app exit'''
-	data_rec = {'username':request.json['username']}
+	data_rec = json.loads(request.content.read())
 	users = [i.serialize['username'] for i in session.query(ServersAvailableInfo).all()]
 	if data_rec['username'] in users: #check account exists
 		remove_server_from_db(data_rec['username'])
@@ -122,4 +119,4 @@ def remove_server_from_db(username):
 		session.commit()
 
 if __name__ == "__main__":
-	app.run(debug="True")
+	app.run("0.0.0.0", 80)
