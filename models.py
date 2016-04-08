@@ -31,7 +31,6 @@ class ServersAvailableInfo(Base):
   def serialize(self):
     return {
       'username': self.username,
-      'ip_address': self.ip_address,
       'audio_port': self.audio_port,
       'stroke_port': self.stroke_port,
       }

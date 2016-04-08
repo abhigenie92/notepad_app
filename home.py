@@ -1,6 +1,7 @@
 #https://github.com/udacity/APIs/tree/master/Lesson_3/06_Adding%20Features%20to%20your%20Mashup/Solution%20Code
 #https://www.youtube.com/playlist?list=PLXmMXHVSvS-CoYS177-UvMAQYRfL3fBtX
 #from flask import Flask,jsonify, request
+
 from models import UsersLoginInfo,ServersAvailableInfo,Base
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
@@ -8,8 +9,13 @@ from sqlalchemy import create_engine
 import socket,pdb,json
 from klein import run, route, Klein, resource
 from os import pathsep
+
+# user-defined classes
 from stroke_protocol import StrokeEchoFactory
-from audio_protocol import AudioEchoUDP
+from audio_protocol import AudioEchoFactory
+from twisted.internet import reactor
+from room import room
+
 engine = create_engine('sqlite:///.'+pathsep+'database'+pathsep+'userslogininfo.db',connect_args={'check_same_thread':False})
 available_rooms={}
 Base.metadata.bind = engine
@@ -17,6 +23,7 @@ DBSession = sessionmaker(bind=engine)
 session = DBSession()
 #app=Flask(__name__)
 app = Klein()
+rooms=[] # a list of rooms available
 #_____________________________________________________________________________________________________
 @app.route('/login',methods=['POST'])
 def login(request):
@@ -60,8 +67,8 @@ def create(request):
 def start_server(request):
 	'''used to create a entry for the client ip_address & audio & stroke port. Thus, now others users can directly connect to that
 	client.'''
+	server_public_ip=request.client.host
 	data_rec = json.loads(request.content.read())
-
 	users = [i.serialize['username'] for i in session.query(ServersAvailableInfo).all()]
 	room_exits=False 
 	msg='This server created.'
@@ -70,20 +77,22 @@ def start_server(request):
 		room_exits=True
 		remove_server_from_db(data_rec['username']) # delete existing room		
 	
-	# code to start the serber
-	port = app.listenTCP(0, StrokeEchoFactory())
+	# create room object
+	server_room=room(server_username=data_rec['username'])
+	# code to start the server
+	port = reactor.listenTCP(0, StrokeEchoFactory(server_room,server_public_ip))
 	stroke_port=port.getHost().port
-	port = app.listenUDP(0, AudioEchoUDP())
+	#port = reactor.listenUDP(0, AudioEchoUDP(server_room))
+	port = reactor.listenTCP(0, AudioEchoFactory(server_room,server_public_ip))
 	audio_port=port.getHost().port
 
 	# add the entry to the rooms database
 	id=len(users)
-	server_room = ServersAvailableInfo(username = unicode(data_rec['username']), ip_address=unicode(data_rec['ip_address'])
-              ,audio_port=audio_port,stroke_port=stroke_port, id = id)
+	server_room = ServersAvailableInfo(username = unicode(data_rec['username']), audio_port=audio_port,stroke_port=stroke_port, id = id)
 	session.add(server_room)
 	session.commit()
 
-	return json.dumps({'room_exits' : room_exits ,"msg": msg}) 
+	return json.dumps({'room_exits' : room_exits ,"msg": msg,"stroke_port":stroke_port,"audio_port":audio_port}) 
 
 #___________________________________________________________________________________________________________
 @app.route('/connect_server',methods=['GET'])
@@ -98,10 +107,11 @@ def connect_server(request):
 	if data_rec['server_username'] in users: #check account exists
 		msg="The specified user has registered a server, establishing connection now..."
 		serv_avail=True
-		room_obj=session.query(ServersAvailableInfo).filter_by(username=request.json['server_username']).one()
+		room_obj=session.query(ServersAvailableInfo).filter_by(username=data_rec['server_username']).one()
 		audio_port=room_obj.audio_port
 		stroke_port=room_obj.stroke_port
 		ip_address=room_obj.ip_address
+		# Here we will add the port and 
 	else:
 		msg="Server not available for the username you entered."
 		serv_avail=False
@@ -117,6 +127,12 @@ def delete_server(request):
 		remove_server_from_db(data_rec['username'])
 	return None 
 
+@app.route('/add_client',methods=['POST'])
+def delete_server(request):
+	'''deletes the room from base, is called on app exit'''
+	data_rec = json.loads(request.content.read())
+	# 
+
 def remove_server_from_db(username):
 	'''removes a room from the database ServersAvailableInfo searching by argument username received
 	in call'''
@@ -126,7 +142,7 @@ def remove_server_from_db(username):
 		session.commit()
 
 if __name__ == "__main__":
-	app.run("0.0.0.0", 80)
+	app.run("localhost", 5007)
 else:
 	# expose a 'resource' name for use with twistd web
 	resource = app.resource
