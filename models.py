@@ -3,7 +3,7 @@ from sqlalchemy import Column,Integer,String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy import create_engine
-from os import pathsep
+from os import sep
 
 Base = declarative_base()
 class UsersLoginInfo(Base):
@@ -35,7 +35,7 @@ class ServersAvailableInfo(Base):
       'stroke_port': self.stroke_port,
       }
 
-engine = create_engine('sqlite:///.'+pathsep+'database'+pathsep+'userslogininfo.db')
+engine = create_engine('sqlite:///.'+sep+'database'+sep+'userslogininfo.db')
   
 
 Base.metadata.create_all(engine)
