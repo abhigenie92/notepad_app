@@ -12,7 +12,7 @@ class AudioEcho(NetstringReceiver):
     def connectionMade(self):
         print "Connected client:",self
 
-    def dataReceived(self, data):
+    def stringReceived(self, data):
         if self.unregistered:
             self.unregistered=False
             recv_data=json.loads(data)
@@ -20,7 +20,7 @@ class AudioEcho(NetstringReceiver):
         else:    
             for protocol in list(self.factory.protocols):
                 if protocol!=self:
-                    protocol.transport.write(data)
+                    protocol.sendString(data)
 
     def connectionLost(self, reason):
         print "Client disconnected:", self.transport.getPeer()
