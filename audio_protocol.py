@@ -12,18 +12,15 @@ class AudioEcho(NetstringReceiver):
     def connectionMade(self):
         print "Connected client:",self
 
-    def stringReceived(self, string):
+    def dataReceived(self, data):
         if self.unregistered:
-            username=json.loads(string)
             self.unregistered=False
-            if username==self.factory.server_username:
-                self.factory.rooms[username].server_protocol_audio=self
-            else:
-                self.factory.rooms[username].connected_protocols_audio.add(self)
-        else:
-            for protocol in self.factory.rooms[username].connected_protocols_audio:
+            recv_data=json.loads(data)
+            self.username=recv_data['username']
+        else:    
+            for protocol in list(self.factory.protocols):
                 if protocol!=self:
-                    protocol.sendString(string)
+                    protocol.transport.write(data)
 
     def connectionLost(self, reason):
         print "Client disconnected:", self.transport.getPeer()
@@ -35,12 +32,13 @@ class AudioEcho(NetstringReceiver):
 
 class AudioEchoFactory(Factory):
     protocol = AudioEcho
-    def __init__(self,server_username,rooms):
+    port=''
+    def __init__(self,server_username,ServersAvailableInfo,session):
         self.protocols = set()
-        self.echoers = []
         self.server_username = server_username
         self.closePort = Deferred()
-        self.rooms=rooms
+        self.ServersAvailableInfo=ServersAvailableInfo
+        self.session=session
 
     def buildProtocol(self, addr):
         protocol = Factory.buildProtocol(self, addr)
@@ -51,12 +49,19 @@ class AudioEchoFactory(Factory):
         self.protocols.remove(non_server_protocol)
 
     def disconnectAll(self,server_protocol):
-        # delete from room dictionary
-        del self.rooms[self.server_username]
         # remove from database
-        requests.post('http://127.0.0.1:8080'+"/delete_server", json={'username':self.username})
+        self.remove_from_db()
         # remove all clients
-        self.stopListening()
+        self.port.stopListening()
         
     def get_all_connected_clients(self):
         return [protocol.username for protocol in protocols if protocol.username!=self.server_username]
+
+    def remove_from_db(self):
+        users = [i.serialize['username'] for i in self.session.query(self.ServersAvailableInfo).all()]
+        if self.server_username in users:
+            room_obj=self.session.query(self.ServersAvailableInfo).filter_by(username=self.server_username).one()
+            if room_obj:
+                self.session.delete(room_obj)
+                self.session.commit()
+

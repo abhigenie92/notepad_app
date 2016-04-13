@@ -14,15 +14,14 @@ from os import sep
 from stroke_protocol import StrokeEchoFactory
 from audio_protocol import AudioEchoFactory
 from twisted.internet import reactor
-from room import room
 
-engine = create_engine('sqlite:///.'+sep+'database'+sep+'userslogininfo.db',connect_args={'check_same_thread':False})
+engine = create_engine('sqlite:///.'+sep+'database'+sep+'userslogininfo.db',\
+	connect_args={'check_same_thread':False})
 Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
 #app=Flask(__name__)
 app = Klein()
-rooms={} # a list of rooms available
 
 #_____________________________________________________________________________________________________
 @app.route('/login',methods=['POST'])
@@ -78,17 +77,19 @@ def start_server(request):
 		room_exits=True
 		remove_server_from_db(data_rec['username']) # delete existing room		
 	
-	# create room object
-	server_room=room(server_username=username)
 	# code to start the server
-	stroke_port_fac = reactor.listenTCP(0, StrokeEchoFactory(username,rooms))
-	stroke_port=stroke_port_fac.getHost().port
-	audio_port_fac = reactor.listenTCP(0, AudioEchoFactory(username,rooms))
-	audio_port=audio_port_fac.getHost().port
-	server_room.specify_factories(audio_factory=audio_port_fac,stroke_factory=stroke_port_fac,
-		server_username=username)
 
-	rooms[username]=server_room
+	stroke_factory = StrokeEchoFactory(username,ServersAvailableInfo,session); 
+	stroke_port_fac = reactor.listenTCP(0, stroke_factory); 
+	stroke_port=stroke_port_fac.getHost().port
+	stroke_factory.port = stroke_port_fac
+	
+	audio_factory = AudioEchoFactory(username,ServersAvailableInfo,session); 
+	audio_port_fac = reactor.listenTCP(0, audio_factory); 
+	audio_port=audio_port_fac.getHost().port
+	audio_factory.port = audio_port_fac
+
+
 	# add the entry to the rooms database
 	id=len(users)
 	server_room = ServersAvailableInfo(username = unicode(data_rec['username']), audio_port=audio_port,stroke_port=stroke_port, id = id)
@@ -129,42 +130,6 @@ def delete_server(request):
 	if data_rec['username'] in users: #check account exists
 		remove_server_from_db(data_rec['username'])
 	return None 
-
-@app.route('/connected_clients',methods=['GET'])
-def add_client(request):
-	'''allows a client to send data'''
-	data_rec = json.loads(request.content.read())
-	username=data_rec['username']
-	reply=rooms[username].get_all_connected_clients()
-	print reply
-	return None  
-
-@app.route('/request_send',methods=['Post'])
-def request_send(request):
-	'''allows a client to send data'''
-	data_rec = json.loads(request.content.read())
-	username=data_rec['username']
-	audio=data_rec['audio']
-	stroke=data_rec['stroke']
-	server_username=data_rec['server_username']
-	if rooms[server_username]:
-		rooms[server_username].request_pending_clients.append({username:(audio,stroke)})
-		msg="Requested, your stream"
-	else:
-		msg="The server you are connected has shutdown"
-	return msg
-
-@app.route('/add_client',methods=['POST'])
-def add_client(request):
-	'''allows a client to send data'''
-	data_rec = json.loads(request.content.read())
-	username=data_rec['username']
-	if rooms[server_username]:
-		requests_pending=rooms[server_username].request_pending_clients
-		return json.dumps(requests_pending)
-	else:
-		return 'Sry, your server is not registered. Please start again'
-	# 
 
 def remove_server_from_db(username):
 	'''removes a room from the database ServersAvailableInfo searching by argument username received
