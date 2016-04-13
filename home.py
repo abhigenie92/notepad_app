@@ -71,7 +71,7 @@ def start_server(request):
 	username=data_rec['username']
 	users = [i.serialize['username'] for i in session.query(ServersAvailableInfo).all()]
 	room_exits=False 
-	msg='This server created.'
+	msg='The server has been created. Now others can connect.'
 	if username in users: #check account exists
 		msg='This server already existed. It has been deleted and a server has been created.'
 		room_exits=True
