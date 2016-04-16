@@ -21,8 +21,8 @@ class UsersLoginInfo(Base):
       }
 class ServersAvailableInfo(Base):
   __tablename__ = 'serversavailable'
-  id = Column(Integer, primary_key = True)
-  username = Column(String)
+  id = Column(Integer)
+  username = Column(String, primary_key = True)
   ip_address = Column(String)
   audio_port= Column(Integer)
   stroke_port= Column(Integer)
